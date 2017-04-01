@@ -17,7 +17,7 @@ public class TimeUtil {
     private static final String DATE_FORMAT_ISO_8601 = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ";
     private static final String FORMAT_TIME_STAMP = "EEEE,  yyyy-MM-dd h:mm a";
 
-    private static final String FORMAT_DAY = "EEEE,dd/MMM";
+    private static final String FORMAT_DAY = "EEEE, dd/MMM";
 
     public static DATELABLE getDateLabel(long timeInMillis) {
         long nowTime = System.currentTimeMillis();

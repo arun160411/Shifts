@@ -64,7 +64,7 @@ public final class ShiftsDataAdapter extends RecyclerViewCursorAdapter<ShiftsDat
             String duration = String.format("%d min",
                     TimeUnit.MILLISECONDS.toMinutes(millis));
             holder.mTitleView.setTextColor(ContextCompat.getColor(mContext, android.R.color.black));
-            holder.mTitleView.setText(TimeUtil.convertTimeStampToDayString(fromTimestamp)+" for "+duration);
+            holder.mTitleView.setText(TimeUtil.convertTimeStampToDayString(fromTimestamp)+"\nShift: "+duration);
         }
         Picasso.with(mContext)
                 .load(imagePath + "#" + id) // for better caching
