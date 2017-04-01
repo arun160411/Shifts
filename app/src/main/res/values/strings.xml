@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Shifts</string>
+    <string name="title_shift_list">Deputy Shifts</string>
+    <string name="title_shift_detail">Shift Detail</string>
+    <string name="title_activity_maps">Map</string>
+    <string name="location_permission_rational_message">ShiftsApp needs Location permission to startTimeStamp your shift. Allow Location Permissions from App Settings.</string>
+    <string name="location_permission_mimic"><![CDATA[Tap <b>Permissions</b> and allow ShiftsApp to access your location]]></string>
+    <string name="location_permission_deny_message">Next time when you want to startTimeStamp a Shift, ALLOW permission</string>
+    <string name="detail_activity_json_error">Json conversion error</string>
+    <string name="starttime">Start Time:</string>
+    <string name="endtime">End Time:</string>
+    <string name="from_address">From:</string>
+    <string name="end_address">To:</string>
+    <string name="shift_in_progress">Shift in Progress</string>
+</resources>
