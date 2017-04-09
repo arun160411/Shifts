@@ -156,7 +156,9 @@ public class ShiftListActivity extends AppCompatActivity implements ShiftsDataAd
             mTwoPane = true;
         }
 
-
+        if (mLoadedDataFromNetwork && ((ShiftsApplication)getApplication()).isServiceStopped()) {
+            getSupportLoaderManager().initLoader(ID_SHIFTS_LOADER, null, ShiftListActivity.this);
+        }
     }
 
     /**
@@ -179,9 +181,7 @@ public class ShiftListActivity extends AppCompatActivity implements ShiftsDataAd
     @Override
     protected void onResume() {
         super.onResume();
-        if (mLoadedDataFromNetwork && ((ShiftsApplication)getApplication()).isServiceStopped()) {
-            getSupportLoaderManager().initLoader(ID_SHIFTS_LOADER, null, ShiftListActivity.this);
-        }
+
         if (mGoogleApiClient != null && mGoogleApiClient.isConnected() && !mRequestingLocationUpdates) {
             startLocationUpdates();
         }
