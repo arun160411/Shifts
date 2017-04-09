@@ -13,6 +13,7 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.RequestFuture;
 import com.android.volley.toolbox.StringRequest;
+import com.deputy.challenge.shifts.application.ShiftsApplication;
 import com.deputy.challenge.shifts.http.VolleyRequestQueue;
 import com.deputy.challenge.shifts.util.JsonUtil;
 
@@ -57,7 +58,7 @@ public class ShiftIntentService extends IntentService implements Response.Listen
         Cursor cursor = null;
         try {
             JSONArray shiftsArray = getShiftsFromServer();
-            if(shiftsArray!=null) {
+            if(shiftsArray!=null) { // null means network is not available.
                 cursor = getContentResolver().query(CONTENT_URI, null, null, null, null, null);
                 Sync(cursor, shiftsArray);
             }
@@ -129,6 +130,7 @@ public class ShiftIntentService extends IntentService implements Response.Listen
     }
 
     private void sendBroadcast() {
+        ((ShiftsApplication)getApplication()).setServiceStopped(true);
         Intent intent = new Intent(BROADCAST_FINISHED);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }

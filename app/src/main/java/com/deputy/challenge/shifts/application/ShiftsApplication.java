@@ -11,9 +11,21 @@ import com.deputy.challenge.shifts.intentservice.ShiftIntentService;
 
 public class ShiftsApplication extends Application {
 
+    public boolean isServiceStopped() {
+        return serviceStopped;
+    }
+
+    public void setServiceStopped(boolean serviceStopped) {
+        this.serviceStopped = serviceStopped;
+    }
+
+    private boolean serviceStopped = false;
+
     @Override
     public void onCreate() {
         super.onCreate();
         startService(new Intent(this,ShiftIntentService.class));
     }
+
+
 }

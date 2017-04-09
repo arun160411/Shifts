@@ -16,7 +16,8 @@ import android.widget.TextView;
  */
 public class PermissionsUtil {
 
-    public static final int REQUEST_CODE_LOCATION = 10;
+    public static final int REQUEST_CODE_LOCATION_STARTSHIFT = 10;
+    public static final int REQUEST_CODE_LOCATION_ENDSHIFT = 11;
     private static final String SHIFTS_PREFS = "Shifts_Pref";
     private static final String HAS_LOCATION_PERMISSION = "location_permission_granted";
 
@@ -36,11 +37,11 @@ public class PermissionsUtil {
     }
 
 
-    public static Status hasPermission(final Activity context, Permission type) {
+    public static Status hasPermission(final Activity context, Permission type,boolean startShift) {
         switch (type) {
 
             case LOCATION:
-                return hasPermissionForLocation(context);
+                return hasPermissionForLocation(context,startShift);
 
             default:
                 return Status.ALLOWED;
@@ -48,7 +49,7 @@ public class PermissionsUtil {
     }
 
 
-    private static Status hasPermissionForLocation(Activity context) {
+    private static Status hasPermissionForLocation(Activity context,boolean startShift) {
 
         // When the requested feature has granted permission. The calling method will handle the positive path.
         if (hasPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)) {
@@ -62,7 +63,11 @@ public class PermissionsUtil {
         // opting for "Never ask again".
         // This block has the responsibility to request the permission and return the REQUESTED status.
         if (isRationaleFlow) {
-            ActivityCompat.requestPermissions(context, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_CODE_LOCATION);
+            if (startShift){
+                ActivityCompat.requestPermissions(context, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_CODE_LOCATION_STARTSHIFT);
+        }else {
+            ActivityCompat.requestPermissions(context, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_CODE_LOCATION_ENDSHIFT);
+        }
 
             return Status.REQUESTED;
 
@@ -71,9 +76,11 @@ public class PermissionsUtil {
             // This block has the responsibility to request the permission and return the REQUESTED status.
             if (!hasPermissionBeenRequested(context, Permission.LOCATION.name())) {
                 setPermissionBeenRequested(context, Permission.LOCATION.name(), true);
-
-                ActivityCompat.requestPermissions(context, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_CODE_LOCATION);
-
+                if (startShift) {
+                    ActivityCompat.requestPermissions(context, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_CODE_LOCATION_STARTSHIFT);
+                }else{
+                    ActivityCompat.requestPermissions(context, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_CODE_LOCATION_ENDSHIFT);
+                }
                 return Status.REQUESTED;
             }
         }

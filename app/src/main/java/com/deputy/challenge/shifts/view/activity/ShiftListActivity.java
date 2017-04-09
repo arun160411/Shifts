@@ -33,6 +33,7 @@ import android.widget.Toast;
 
 import com.deputy.challenge.shifts.R;
 import com.deputy.challenge.shifts.adapter.ShiftsDataAdapter;
+import com.deputy.challenge.shifts.application.ShiftsApplication;
 import com.deputy.challenge.shifts.data.contract.ShiftsContract;
 import com.deputy.challenge.shifts.data.model.Shift;
 import com.deputy.challenge.shifts.intentservice.ShiftIntentService;
@@ -54,7 +55,8 @@ import static com.deputy.challenge.shifts.data.contract.ShiftsContract.ShiftsTab
 import static com.deputy.challenge.shifts.data.contract.ShiftsContract.ShiftsTable.COLUMN_START_LONGITUDE;
 import static com.deputy.challenge.shifts.data.contract.ShiftsContract.ShiftsTable.COLUMN_START_TIMESTAMP;
 import static com.deputy.challenge.shifts.data.contract.ShiftsContract.ShiftsTable.CONTENT_URI;
-import static com.deputy.challenge.shifts.util.PermissionsUtil.REQUEST_CODE_LOCATION;
+import static com.deputy.challenge.shifts.util.PermissionsUtil.REQUEST_CODE_LOCATION_ENDSHIFT;
+import static com.deputy.challenge.shifts.util.PermissionsUtil.REQUEST_CODE_LOCATION_STARTSHIFT;
 import static com.deputy.challenge.shifts.util.PermissionsUtil.Status.NEVERASK;
 import static com.deputy.challenge.shifts.util.PermissionsUtil.Status.REQUESTED;
 import static com.deputy.challenge.shifts.util.ShiftAppConstants.URLConstants.END_SHIFT_URL;
@@ -85,7 +87,7 @@ public class ShiftListActivity extends AppCompatActivity implements ShiftsDataAd
     private ProgressBar mLoadingIndicator;
     private RecyclerView mRecyclerView;
 
-    private int mPosition = RecyclerView.NO_POSITION;
+    private int mRVPosition = RecyclerView.NO_POSITION;
 
     private ShiftsDataAdapter mShiftsDataAdapter;
 
@@ -109,7 +111,7 @@ public class ShiftListActivity extends AppCompatActivity implements ShiftsDataAd
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         extractBundle(savedInstanceState);
-        LoadPreferences();
+        loadPreferences(savedInstanceState);
         LocalBroadcastManager.getInstance(this)
                 .registerReceiver(receiver, new IntentFilter(ShiftIntentService.BROADCAST_FINISHED));
         setContentView(R.layout.activity_shift_list);
@@ -136,10 +138,10 @@ public class ShiftListActivity extends AppCompatActivity implements ShiftsDataAd
                 Integer tag = (Integer) mFab.getTag();
                 switch (tag.intValue()) {
                     case android.R.drawable.checkbox_on_background:
-                        handleFabButtonEndShift();
+                        handleFabButtonStartEndShift(false);
                         break;
                     case android.R.drawable.ic_input_add:
-                        handleFabButtonStartShift();
+                        handleFabButtonStartEndShift(true);
                         break;
                 }
             }
@@ -157,26 +159,17 @@ public class ShiftListActivity extends AppCompatActivity implements ShiftsDataAd
 
     }
 
-    private void handleFabButtonEndShift() {
-        Shift latestShift = ((ShiftsDataAdapter) mRecyclerView.getAdapter()).getItemAt(0);
-        if (mGoogleApiClient == null) {
-            setupLocationService();
-        }
-        if (mLocation != null)
-            endShiftAndUpdateServer(latestShift);
-    }
-
     /**
      * checks for permissions to show user a proper snackBar.
      */
-    private void handleFabButtonStartShift() {
-        PermissionsUtil.Status cameraStatus = PermissionsUtil.hasPermission(this, PermissionsUtil.Permission.LOCATION);
+    private void handleFabButtonStartEndShift(boolean startShift) {
+        PermissionsUtil.Status cameraStatus = PermissionsUtil.hasPermission(this, PermissionsUtil.Permission.LOCATION,startShift);
         if (cameraStatus == PermissionsUtil.Status.ALLOWED) {
-            handlePermissionResult(PermissionsUtil.Permission.LOCATION.ordinal(), PermissionsUtil.Status.ALLOWED);
+            handlePermissionResult(PermissionsUtil.Permission.LOCATION.ordinal(), PermissionsUtil.Status.ALLOWED,startShift);
         } else if (cameraStatus == REQUESTED) {
-            handlePermissionResult(PermissionsUtil.Permission.LOCATION.ordinal(), REQUESTED);
+            handlePermissionResult(PermissionsUtil.Permission.LOCATION.ordinal(), REQUESTED,startShift);
         } else if (cameraStatus == NEVERASK) {
-            handlePermissionResult(PermissionsUtil.Permission.LOCATION.ordinal(), NEVERASK);
+            handlePermissionResult(PermissionsUtil.Permission.LOCATION.ordinal(), NEVERASK,startShift);
         }
     }
 
@@ -186,7 +179,7 @@ public class ShiftListActivity extends AppCompatActivity implements ShiftsDataAd
     @Override
     protected void onResume() {
         super.onResume();
-        if (mLoadedDataFromNetwork) {
+        if (mLoadedDataFromNetwork && ((ShiftsApplication)getApplication()).isServiceStopped()) {
             getSupportLoaderManager().initLoader(ID_SHIFTS_LOADER, null, ShiftListActivity.this);
         }
         if (mGoogleApiClient != null && mGoogleApiClient.isConnected() && !mRequestingLocationUpdates) {
@@ -197,7 +190,7 @@ public class ShiftListActivity extends AppCompatActivity implements ShiftsDataAd
     private void extractBundle(Bundle savedInstanceState) {
         if (savedInstanceState != null) {
             mLoadedDataFromNetwork = savedInstanceState.getBoolean(LOADED_FROM_NETWORK, false);
-            mPosition = savedInstanceState.getInt(RECYCLER_VIEW_CURRENT_POSITION, 0);
+            mRVPosition = savedInstanceState.getInt(RECYCLER_VIEW_CURRENT_POSITION, 0);
             mRequestingLocationUpdates = savedInstanceState.getBoolean(REQUESTING_LOCATION_UPDATES_KEY, false);
             mLocation = savedInstanceState.getParcelable(LOCATION_KEY);
         }
@@ -217,8 +210,8 @@ public class ShiftListActivity extends AppCompatActivity implements ShiftsDataAd
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
         mShiftsDataAdapter.swapCursor(cursor);
-        if (mPosition == RecyclerView.NO_POSITION) mPosition = 0;
-        mRecyclerView.smoothScrollToPosition(mPosition);
+        if (mRVPosition == RecyclerView.NO_POSITION) mRVPosition = 0;
+        mRecyclerView.smoothScrollToPosition(mRVPosition);
         showShiftsDataView();
         if (cursor.getCount() == 0) {
             Toast.makeText(this, "Welcome to Shifts. Please start adding your shifts", Toast.LENGTH_SHORT).show();
@@ -317,25 +310,21 @@ public class ShiftListActivity extends AppCompatActivity implements ShiftsDataAd
     };
 
 
-    private void SavePreferences(){
+    private void savePreferences(){
         SharedPreferences sharedPreferences = getPreferences(MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putBoolean("LOADED_FROM_NETWORK", mLoadedDataFromNetwork);
-        editor.commit();   // I missed to save the data to preference here,.
+        editor.putBoolean(LOADED_FROM_NETWORK, mLoadedDataFromNetwork);
+        editor.commit();
     }
 
-    private void LoadPreferences(){
+    private void loadPreferences(Bundle bundle){
         SharedPreferences sharedPreferences = getPreferences(MODE_PRIVATE);
-        mLoadedDataFromNetwork = sharedPreferences.getBoolean("LOADED_FROM_NETWORK", false);
+        mLoadedDataFromNetwork = sharedPreferences.getBoolean(LOADED_FROM_NETWORK, false);
     }
 
-    @Override
-    public void onBackPressed() {
-        SavePreferences();
-        super.onBackPressed();
-    }
 
-    private void handlePermissionResult(int permissionCode, PermissionsUtil.Status permissionStatus) {
+
+    private void handlePermissionResult(int permissionCode, PermissionsUtil.Status permissionStatus, boolean start) {
 
         switch (permissionStatus) {
             case ALLOWED:
@@ -343,7 +332,12 @@ public class ShiftListActivity extends AppCompatActivity implements ShiftsDataAd
                     setupLocationService();
                 }
                 if (mLocation != null) {
-                    Shift shift = createShiftAndUpdateServer(mLocation);
+                    if(start) {
+                        Shift shift = createShiftAndUpdateServer(mLocation);
+                    }else{
+                        Shift latestShift = ((ShiftsDataAdapter) mRecyclerView.getAdapter()).getItemAt(0);
+                        endShiftAndUpdateServer(latestShift);
+                    }
                 }
                 break;
 
@@ -375,6 +369,7 @@ public class ShiftListActivity extends AppCompatActivity implements ShiftsDataAd
         Uri contentUri = getContentResolver().insert(CONTENT_URI, cv);
         shift.setId(Integer.valueOf(contentUri.getPathSegments().get(1)));
         NetworkUtils.postToApi(this, START_SHIFT_URL, shift);
+        Toast.makeText(getApplicationContext(),"Shift started and is at the top of the list",Toast.LENGTH_SHORT).show();
         return shift;
     }
 
@@ -390,6 +385,7 @@ public class ShiftListActivity extends AppCompatActivity implements ShiftsDataAd
         // Doing it Sync as we want the UI to be updated before user can start a new shift.
         getContentResolver().update(CONTENT_URI, cv, WHERE, new String[]{String.valueOf(shift.getId())});
         NetworkUtils.postToApi(this, END_SHIFT_URL, shift);
+        Toast.makeText(getApplicationContext(),"Shift Ended",Toast.LENGTH_SHORT).show();
         return shift;
     }
 
@@ -408,16 +404,25 @@ public class ShiftListActivity extends AppCompatActivity implements ShiftsDataAd
     public void onRequestPermissionsResult(int requestCode,
                                            String permissions[], int[] grantResults) {
         switch (requestCode) {
-            case REQUEST_CODE_LOCATION: {
+            case REQUEST_CODE_LOCATION_STARTSHIFT:
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    handlePermissionResult(PermissionsUtil.Permission.LOCATION.ordinal(), PermissionsUtil.Status.ALLOWED);
+                    handlePermissionResult(PermissionsUtil.Permission.LOCATION.ordinal(), PermissionsUtil.Status.ALLOWED,true);
                 } else {
                     attachSnackBar(R.string.location_permission_deny_message, -1, false);
                 }
                 return;
-            }
+
+            case REQUEST_CODE_LOCATION_ENDSHIFT:
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    handlePermissionResult(PermissionsUtil.Permission.LOCATION.ordinal(), PermissionsUtil.Status.ALLOWED,false);
+                } else {
+                    attachSnackBar(R.string.location_permission_deny_message, -1, false);
+                }
+                return;
 
         }
     }
@@ -444,6 +449,7 @@ public class ShiftListActivity extends AppCompatActivity implements ShiftsDataAd
     protected void onStop() {
         if (mGoogleApiClient != null)
             mGoogleApiClient.disconnect();
+        savePreferences();
         super.onStop();
     }
 
