@@ -8,7 +8,7 @@ public class ShiftAppConstants {
     public static final String POST_LATITUDE_KEY = "latitude";
     public static final String POST_LONGITUDE_KEY = "longitude";
 
-    public static final String HEADER_AUTHORIZATION_VALUE = "Deputy 75c60816dcee56f6eb0055ee97083f1c895c776b";
+    public static final String HEADER_AUTHORIZATION_VALUE = "Deputy efb9c13e46dd620ac174e6747168c9317dec342a";
     public static final String HEADER_AUTHORIZATION = "Authorization";
 
     public static class URLConstants{
