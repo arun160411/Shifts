@@ -368,7 +368,7 @@ public class ShiftListActivity extends AppCompatActivity implements ShiftsDataAd
         // Doing it Sync as we want the UI to be updated before user can end the shift.
         Uri contentUri = getContentResolver().insert(CONTENT_URI, cv);
         shift.setId(Integer.valueOf(contentUri.getPathSegments().get(1)));
-        NetworkUtils.postToApi(this, START_SHIFT_URL, shift);
+        NetworkUtils.postToApi(this, START_SHIFT_URL, shift,true);
         Toast.makeText(getApplicationContext(),"Shift started and is at the top of the list",Toast.LENGTH_SHORT).show();
         return shift;
     }
@@ -384,7 +384,7 @@ public class ShiftListActivity extends AppCompatActivity implements ShiftsDataAd
         cv.put(COLUMN_END_LONGITUDE, shift.getEndLongitude());
         // Doing it Sync as we want the UI to be updated before user can start a new shift.
         getContentResolver().update(CONTENT_URI, cv, WHERE, new String[]{String.valueOf(shift.getId())});
-        NetworkUtils.postToApi(this, END_SHIFT_URL, shift);
+        NetworkUtils.postToApi(this, END_SHIFT_URL, shift,false);
         Toast.makeText(getApplicationContext(),"Shift Ended",Toast.LENGTH_SHORT).show();
         return shift;
     }

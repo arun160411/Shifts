@@ -43,10 +43,10 @@ public final class NetworkUtils {
     private static final String TAG = NetworkUtils.class.getSimpleName();
 
 
-    public static void postToApi(Context context, String url, Shift shift){
+    public static void postToApi(Context context, String url, Shift shift,boolean start){
         JSONObject jsonObject = new JSONObject();
         try {
-            jsonObject.put(POST_TIME_KEY, TimeUtil.convertTimeStampToISO_8601(shift.getStartTimeStamp()));
+            jsonObject.put(POST_TIME_KEY, TimeUtil.convertTimeStampToISO_8601(start?shift.getStartTimeStamp():shift.getEndTimestamp()));
             jsonObject.put(POST_LATITUDE_KEY, shift.getStartLatitude());
             jsonObject.put(POST_LONGITUDE_KEY, shift.getStartLongitude());
         }catch(JSONException e){
